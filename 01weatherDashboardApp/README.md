@@ -53,8 +53,8 @@ weather-dashboard/
 ## Installation
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/weather-dashboard.git
-   cd weather-dashboard
+   git clone https://github.com/CynthiaWahome/devopsChallenge1.git
+   cd 01weatherDashboard
    ```
 
 2. **Create a virtual environment and activate it:**
