@@ -4,7 +4,7 @@
 The Weather Dashboard is a Python application designed to fetch real-time weather data for specified cities using the OpenWeather API and store the data in an AWS S3 bucket. This project demonstrates core DevOps principles, including API integration, cloud storage, infrastructure as code, version control, and environment management.
 
 ## Architectural Diagram
-![Architectural Diagram](data/docs/architecture.png)
+![Architectural Diagram](data/docs/weatherDashboard.png)
 
 ## Table of Contents
 - Features
