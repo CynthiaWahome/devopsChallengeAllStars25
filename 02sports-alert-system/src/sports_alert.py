@@ -49,7 +49,7 @@ def format_sports_data(game):
         )
 
 def lambda_handler(event, context):
-    api_key = os.getenv("NFL_API_KEY")
+    api_key = os.getenv("NBA_API_KEY")
     sns_topic_arn = os.getenv("SNS_TOPIC_ARN")
     sns_client = boto3.client("sns")
 
@@ -77,7 +77,7 @@ def lambda_handler(event, context):
         sns_client.publish(
             TopicArn=sns_topic_arn,
             Message=final_message,
-            Subject="NFL Games Alert"
+            Subject="NBA Games Alert"
         )
         print("Message published to SNS sucessfully!")
     except Exception as e:
