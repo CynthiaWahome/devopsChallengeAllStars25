@@ -60,11 +60,20 @@ def fetch_nba_data():
         print(f"Error fetching NBA data: {e}")
         return []
     
+def convert_to_line_delimited_json(data):
+    print("Converting data to line-delimited JSON ...")
+    return "\n".join([json.dumps(record) for record in data])
+
 def upload_data_to_s3(data):
     try:
-        data = fetch_nba_data()
-        if data:
-            s3_client.put_object(Bucket=bucket_name, Key="nba-data.json", Body=json.dumps(data))
+        line_delimited_data = convert_to_line_delimited_json(data)
+        file_key = "raw-data/nba_data.json"
+
+        if line_delimited_data:
+            s3_client.put_object(
+                Bucket=bucket_name, 
+                Key=file_key, 
+                Body=line_delimited_data.encode("utf-8"))
             print("NBA data uploaded to S3 successfully")
         else:
             print("No NBA data to upload to S3 bucket")
@@ -131,7 +140,7 @@ def configure_athena():
         print(f"Error configuring Athena: {e}")
 
 def main():
-    print("Setting up data lake from NBA sports analytics")
+    print("Setting up data lake from NBA sports analytics...")
     create_bucket(bucket_name)
     time.sleep(5)
     create_glue_database(glue_database)
