@@ -1,12 +1,13 @@
 import os
 from dotenv import load_dotenv
+
 load_dotenv()
 
 API_URL = os.getenv("API_URL", "https://sport-highlights-api.p.rapidapi.com/basketball/highlights")
 
-RAPIDAPI_HOST = os.getenv("RAPIDAPI_HOST", "sport-highlights-api.p.rapidapi.com")
+RAPID_API_HOST = os.getenv("RAPIDAPI_HOST", "sport-highlights-api.p.rapidapi.com")
 
-RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")
+RAPID_API_KEY = os.getenv("RAPIDAPI_KEY")
 
 DATE = os.getenv("DATE", "2023-12-01")
 
