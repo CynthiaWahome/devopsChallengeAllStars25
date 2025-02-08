@@ -2,6 +2,8 @@ import json
 import boto3
 import requests
 import subprocess
+from botocore.exceptions import NoCredentialsError, ClientError
+import os
 
 from config import (
     API_URL,
@@ -38,34 +40,55 @@ def validate_parameters():
     if not isinstance(LIMIT, int) or LIMIT <= 0:
         raise ValueError("LIMIT must be a positive integer")
 
+# Print environment variables to verify they are loaded correctly
+print(f"API_URL: {API_URL}")
+print(f"RAPID_API_HOST: {RAPID_API_HOST}")
+print(f"RAPID_API_KEY: {RAPID_API_KEY}")
+
 def fetch_highlights():
     try:
         query_params = {
             "date": DATE,
-            "league_name": LEAGUE_NAME,
+            "leagueName": LEAGUE_NAME,
             "limit": LIMIT
         }
         headers = {
             "X-RapidAPI-Host": RAPID_API_HOST,
             "X-RapidAPI-Key": RAPID_API_KEY
         }
+        
+        # Print query parameters to verify they are correct
+        print(f"Query Parameters: {query_params}")
+        
         response = requests.get(API_URL, headers=headers, params=query_params, timeout=120)
 
         response.raise_for_status()
 
         highlights = response.json()
-        return highlights
+
+        # Extract the sport name from the API_URL
+        sport_name = API_URL.split('/')[-2]
+
+        # Save the entire JSON response to a file named based on the sport
+        json_file_name = f'{sport_name}_highlights.json'
+        with open(json_file_name, 'w') as f:
+            json.dump(highlights, f, indent=4)
+        
+        # Extract only the "url" fields from the "data" array
+        urls = [item["url"] for item in highlights.get("data", []) if "url" in item]
+        
+        return urls, json_file_name
 
     except requests.exceptions.RequestException as e:
         print(f"Error fetching highlights: {e}")
         if e.response:
             print(f"Response status code: {e.response.status_code}")
             print(f"Response text: {e.response.text}")
-        return None
+        return None, None
 
 def save_to_s3(data, file_name):
     try:
-        s3 = boto3.client("s3", region_name='us-east-1')
+        s3 = boto3.client("s3", region_name=AWS_REGION)
         try:
             s3.head_bucket(Bucket=S3_BUCKET_NAME)
             print(f"Bucket {S3_BUCKET_NAME} exists")
@@ -96,9 +119,22 @@ def save_to_s3(data, file_name):
     except Exception as e:
         print(f"Error saving to S3: {e}")
 
+def download_video(url, local_filename):
+    try:
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+        with open(local_filename, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+        print(f"Downloaded video: {local_filename}")
+        return True
+    except requests.exceptions.RequestException as e:
+        print(f"Error downloading video: {e}")
+        return False
+
 def convert_media(input_file, output_file):
     try:
-        subprocess.run(['ffmpeg', '-i', input_file, output_file], check=True)
+        subprocess.run(['ffmpeg', '-i', input_file, '-c:v', 'copy', '-c:a', 'copy', output_file], check=True)
         print(f"Media converted successfully: {output_file}")
     except subprocess.CalledProcessError as e:
         print(f"Error converting media: {e}")
@@ -106,21 +142,43 @@ def convert_media(input_file, output_file):
 def process_highlights():
     print("Fetching highlights...")
 
-    highlights = fetch_highlights()
+    urls, json_file_name = fetch_highlights()
 
-    if highlights:
+    if urls:
         print("Saving highlights to S3...")
-        save_to_s3(highlights, "basketball_highlights")
+        save_to_s3(urls, json_file_name)
 
-        s3 = boto3.client("s3", region_name=AWS_REGION)
-        input_file = '/tmp/input.json'
-        output_file = '/tmp/output.mp4'
-        s3.download_file(S3_BUCKET_NAME, INPUT_KEY, input_file)
+        output_folder = 'output_videos'
+        raw_folder = os.path.join(output_folder, 'raw')
+        converted_folder = os.path.join(output_folder, 'converted')
+        
+        # Create directories if they do not exist
+        os.makedirs(raw_folder, exist_ok=True)
+        os.makedirs(converted_folder, exist_ok=True)
 
-        convert_media(input_file, output_file)
+        for i, url in enumerate(urls):
+            raw_file = os.path.join(raw_folder, f'{json_file_name.split("_")[0]}_highlight_{i}.mp4')
+            converted_file = os.path.join(converted_folder, f'output_{i}.mp4')
+            
+            if download_video(url, raw_file):
+                try:
+                    convert_media(raw_file, converted_file)
+                except subprocess.CalledProcessError as e:
+                    print(f"Error converting media: {e}")
+                    continue
 
-        s3.upload_file(output_file, S3_BUCKET_NAME, OUTPUT_KEY)
-        print(f"Converted media uploaded to S3: s3://{S3_BUCKET_NAME}/{OUTPUT_KEY}")
+                if os.path.exists(converted_file):
+                    s3 = boto3.client("s3", region_name=AWS_REGION)
+                    s3.upload_file(converted_file, S3_BUCKET_NAME, f'output_videos/converted/output_{i}.mp4')
+                    print(f"Converted media uploaded to S3: s3://{S3_BUCKET_NAME}/output_videos/converted/output_{i}.mp4")
+                else:
+                    print(f"Error: Output file {converted_file} was not created.")
+            else:
+                print(f"Error: Failed to download video from {url}")
 
 if __name__ == "__main__":
-    process_highlights()
+    try:
+        validate_parameters()
+        process_highlights()
+    except ValueError as e:
+        print(f"Parameter validation error: {e}")
