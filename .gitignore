@@ -51,3 +51,4 @@ terraform.rc
 
 # Ignore local environment files
 local.env
+.vscode/
