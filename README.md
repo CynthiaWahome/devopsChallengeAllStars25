@@ -2,7 +2,7 @@
 
 A collection of 6 DevOps projects demonstrating various cloud-native technologies, infrastructure as code, containerization, and serverless architectures.
 
-![DevOps Challenge](/docs/images/devops-challenge-banner.jpg.png)
+![DevOps Challenge](/docs/images/devops-challenge-banner.jpg)
 
 ## Project Overview
 
