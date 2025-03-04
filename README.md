@@ -126,5 +126,16 @@ Infrastructure as Code implementation of a sports alert system using Terraform.
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/CynthiaWahome/devopsChallenge25.git
+   git clone https://github.com/CynthiaWahome/devopsChallengeAllStars25.git
    cd devopsChallenge25
+
+## Acknowledgments
+
+This challenge was created as part of the DevOps Challenge All-Stars 2025 organized by:
+
+- [Ifeanyi Onyeabor](https://github.com/ifeanyiro9) - Challenge Creator & Mentor
+- [Alicia Ahl](https://github.com/alahl1) - Challenge Creator & Mentor
+- [Shae Cloud](https://github.com/ShaeInTheCloud) - Challenge Creator & Mentor
+
+Special thanks to the entire DevOps Challenge team for their mentorship and guidance throughout this learning journey. 
+Their expertise and well-structured challenge projects provided an excellent opportunity to develop practical DevOps skills with real-world applications.
